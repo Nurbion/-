@@ -19,7 +19,8 @@
  * 1) проверка на одинаковые айди сделать√
  * 2)Проверка на закрытие и спросить у пользователя сохранил ли он файл√
  * 3)Проверить чтобы пользователь не забывал вводить данные в текстбоксы√
- * 
+ * 4)найти поставить огранич√
+ * 5)удалить добавить пометку об отсутвии товара√
  * 
  * Немного сделать красивее интерфейс
  */
@@ -37,7 +38,7 @@ using System.Windows.Forms;
 
 namespace Курсовая_работа_Магазин
 {
-   
+
     public partial class Form1 : Form
     {
         public class Product
@@ -260,6 +261,7 @@ namespace Курсовая_работа_Магазин
                     }
                     current = current.Next;
                 }
+                MessageBox.Show("Товар с таким кодом не найден.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
 
@@ -282,7 +284,7 @@ namespace Курсовая_работа_Магазин
                         {
                             Product product = new Product
                             {
-                               Id = int.Parse(parts[0]),
+                                Id = int.Parse(parts[0]),
                                 Name = parts[1],
                                 Category = parts[2],
                                 Year = int.Parse(parts[3]),
@@ -324,13 +326,13 @@ namespace Курсовая_работа_Магазин
                 return result;
             }
 
-            public List<Product> SearchByManufacturer(string manufacturer)
+            public List<Product> SearchByMaker(string maker)
             {
                 List<Product> result = new List<Product>();
                 Node current = head;
                 while (current != null)
                 {
-                    if (current.Data.Maker.IndexOf(manufacturer, StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (current.Data.Maker.IndexOf(maker, StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         result.Add(current.Data);
                     }
@@ -353,19 +355,15 @@ namespace Курсовая_работа_Магазин
                 }
                 return result;
             }
-
-
             //Сюда
         }
 
 
 
 
-
-
-/// <summary>
-/// ///////////////////////////////////////////////////////////////////////////////////////
-/// </summary>
+    /// <summary>
+    /// ///////////////////////////////////////////////////////////////////////////////////////
+    /// </summary>
 
 
 
@@ -388,6 +386,16 @@ namespace Курсовая_работа_Магазин
                 dataGridView1.Rows.Add(current.Data.Id, current.Data.Name, current.Data.Category, current.Data.Year, current.Data.Maker, current.Data.Quantity);
                 current = current.Next;
             }
+        }
+
+        private void ClearTextBoxes()
+        {
+            textBoxId.Clear();
+            textBoxName.Clear();
+            textBoxCategory.Clear();
+            textBoxMaker.Clear();
+            textBoxYear.Clear();
+            textBoxQuantity.Clear();
         }
 
         private Product GetProductFromInputWithValidation()
@@ -434,7 +442,9 @@ namespace Курсовая_работа_Магазин
                 return null;
             }
 
-            return new Product
+
+
+            var newProduct = new Product
             {
                 Id = Id,
                 Name = textBoxName.Text,
@@ -443,7 +453,11 @@ namespace Курсовая_работа_Магазин
                 Maker = textBoxMaker.Text,
                 Quantity = quantity
             };
-        }
+
+            ClearTextBoxes();
+
+            return newProduct;
+        }   
 
         private void AddProductToFront() //поменять местами если что с ендом
         {
@@ -480,27 +494,92 @@ namespace Курсовая_работа_Магазин
 
         private void AddProductBefore()
         {
-            var product = GetProductFromInputWithValidation();
-            if (product != null)
+            using (Form inputForm = new Form())
             {
-                int existingId = int.Parse(textBoxExistingId.Text);
-                products.AddBefore(existingId, product);
-                isDataChanged = true;
-                RefreshDataGridView();
+                inputForm.Text = "Добавить товар перед существующим";
+                inputForm.StartPosition = FormStartPosition.CenterParent;
+
+                Label labelExistingId = new Label() { Left = 20, Top = 20, Text = "Введите ID существующего товара:" };
+                TextBox textBoxExistingId = new TextBox() { Left = 20, Top = 50, Width = 200 };
+                Button confirmationButton = new Button() { Text = "ОК", Left = 20, Width = 100, Top = 80 };
+                confirmationButton.DialogResult = DialogResult.OK;
+
+                inputForm.Controls.Add(labelExistingId);
+                inputForm.Controls.Add(textBoxExistingId);
+                inputForm.Controls.Add(confirmationButton);
+                inputForm.AcceptButton = confirmationButton;
+
+                if (inputForm.ShowDialog() == DialogResult.OK)
+                {
+                    if (int.TryParse(textBoxExistingId.Text, out int existingId))
+                    {
+                        var product = GetProductFromInputWithValidation();
+                        if (product != null)
+                        {
+                            try
+                            {
+                                products.AddBefore(existingId, product);
+                                isDataChanged = true;
+                                RefreshDataGridView();
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show(ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Введите корректный ID.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
             }
         }
 
         private void AddProductAfter()
         {
-            var product = GetProductFromInputWithValidation();
-            if (product != null)
+            using (Form inputForm = new Form())
             {
-                int existingId = int.Parse(textBoxExistingId.Text);
-                products.AddAfter(existingId, product);
-                isDataChanged = true;
-                RefreshDataGridView();
+                inputForm.Text = "Добавить товар после существующего";
+                inputForm.StartPosition = FormStartPosition.CenterParent;
+
+                Label labelExistingId = new Label() { Left = 20, Top = 20, Text = "Введите ID существующего товара:" };
+                TextBox textBoxExistingId = new TextBox() { Left = 20, Top = 50, Width = 200 };
+                Button confirmationButton = new Button() { Text = "ОК", Left = 20, Width = 100, Top = 80 };
+                confirmationButton.DialogResult = DialogResult.OK;
+
+                inputForm.Controls.Add(labelExistingId);
+                inputForm.Controls.Add(textBoxExistingId);
+                inputForm.Controls.Add(confirmationButton);
+                inputForm.AcceptButton = confirmationButton;
+
+                if (inputForm.ShowDialog() == DialogResult.OK)
+                {
+                    if (int.TryParse(textBoxExistingId.Text, out int existingId))
+                    {
+                        var product = GetProductFromInputWithValidation();
+                        if (product != null)
+                        {
+                            try
+                            {
+                                products.AddAfter(existingId, product);
+                                isDataChanged = true;
+                                RefreshDataGridView();
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show(ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Введите корректный ID.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
             }
         }
+
 
 
         private void RemoveProductByCode(int code, int quantity)
@@ -515,6 +594,7 @@ namespace Курсовая_работа_Магазин
             using (Form inputForm = new Form())
             {
                 inputForm.Text = "Удаление товара";
+                inputForm.StartPosition = FormStartPosition.CenterParent;
 
                 Label labelCode = new Label() { Left = 20, Top = 20, Text = "Введите код товара для удаления:" };
                 TextBox textBoxCode = new TextBox() { Left = 20, Top = 50, Width = 200 };
@@ -563,8 +643,16 @@ namespace Курсовая_работа_Магазин
 
         private void DisplaySearchResults(List<Product> results, string title)
         {
+            if (results == null || results.Count == 0)
+            {
+                MessageBox.Show("Ничего не найдено.", "Результаты поиска", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             Form searchResultsForm = new Form();
             searchResultsForm.Text = title;
+            searchResultsForm.StartPosition = FormStartPosition.CenterScreen;
+
 
             DataGridView dataGridView = new DataGridView
             {
@@ -591,21 +679,32 @@ namespace Курсовая_работа_Магазин
         private void DisplayAvailableProducts()
         {
             List<Product> availableProducts = products.GetAvailableProducts();
-            DisplaySearchResults(availableProducts, "Товары с количеством больше 0");
+            DisplaySearchResults(availableProducts, "Товары в наличии");
+
         }
 
         private void SearchProductsByName()
         {
             string name = textBoxSearchName.Text; // TextBox для ввода названия для поиска
+            if (string.IsNullOrEmpty(name))
+            {
+                MessageBox.Show("Введите название для поиска.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             List<Product> result = products.SearchByName(name);
             DisplaySearchResults(result, $"Результаты поиска по названию '{name}'");
         }
 
         private void SearchProductsByMaker()
         {
-            string manufacturer = textBoxSearchMaker.Text; // TextBox для ввода производителя для поиска
-            List<Product> result = products.SearchByManufacturer(manufacturer);
-            DisplaySearchResults(result, $"Результаты поиска по производителю '{manufacturer}'");
+            string maker = textBoxSearchMaker.Text; // TextBox для ввода производителя для поиска
+            if (string.IsNullOrEmpty(maker))
+            {
+                MessageBox.Show("Введите название для поиска.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            List<Product> result = products.SearchByMaker(maker);
+            DisplaySearchResults(result, $"Результаты поиска по производителю '{maker}'");
         }
 
         private void SaveDataToFile()
@@ -677,11 +776,13 @@ namespace Курсовая_работа_Магазин
         private void поискПоНазваниюToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SearchProductsByName();
+            textBoxSearchName.Clear();
         }
 
         private void поискПоПроизводителюToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SearchProductsByMaker();
+            textBoxSearchMaker.Clear();
         }
 
         private void отобразитьТоварывналичииToolStripMenuItem_Click(object sender, EventArgs e)
@@ -715,6 +816,50 @@ namespace Курсовая_работа_Магазин
                     e.Cancel = true; // Отмена закрытия формы
                 }
             }
+        }
+
+        private void справкаToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string helpText = @"
+Приложение представляет собой таблицу,отображающая количество товаров в магазине, их производителя и год производства.
+            Текущая версия: v0.7
+            Функции приложения:
+            1.Добавляет товар в таблицу.
+            1.1.В начало таблицы
+            1.2.В конец таблицы
+            1.3.По производителю
+            1.4.Перед указанным товаром
+            1.5.После указанного товара
+            2.Удаляет товар из таблицы по ID.
+            3.Поиск по производителю и названию.
+            4.Отображает товары в наличии
+            5.Все данные хранятся в файле.
+            6.Файл можно создать,открыть,сохранить.
+---------------------------------------------------------------------
+            Функции на доработке:
+            1.Все данные вводятся в отдельном окне.
+            2.Улучшение интерфейса.
+            3.Добавление возможности указывания точек магазина.
+            4.Поиск по ID.
+            5.Мультиудаление товаров.
+            6.Функция печати.
+            7.Формирование отчета.
+    ";
+
+            MessageBox.Show(helpText, "Справка", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void авторыToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string author = @"
+Создатели приложения:
+Маресев Андрей Юрьевич(Студент 
+НГПУ им.К.Минина 
+Факультет информационных технологий группа 
+ПИМ-22-1).
+Почта для связи:maresev558@gmail.com
+    ";
+            MessageBox.Show(author, "Об авторе", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
